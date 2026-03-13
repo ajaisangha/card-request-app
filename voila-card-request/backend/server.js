@@ -24,10 +24,9 @@ app.use((req, res, next) => {
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
-    smtpHost: process.env.SMTP_HOST || null,
-    smtpPort: process.env.SMTP_PORT || null,
-    smtpUser: process.env.SMTP_USER || null,
-    fromEmail: process.env.FROM_EMAIL || null,
+    smtpHost: !!process.env.SMTP_HOST,
+    smtpUser: !!process.env.SMTP_USER,
+    fromEmail: !!process.env.FROM_EMAIL,
   });
 });
 
@@ -156,6 +155,7 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on http://127.0.0.1:${PORT}`);
 });

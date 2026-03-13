@@ -17,25 +17,6 @@ const initialState = {
   recipientEmail: "",
 };
 
-function getApiBaseUrl() {
-  const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envUrl) return envUrl.replace(/\/$/, "");
-
-  const { protocol, host, hostname } = window.location;
-
-  if (host.includes(".app.github.dev")) {
-    return `${protocol}//${host.replace(/-\d+\./, "-5000.")}`;
-  }
-
-  if (host.includes(":")) {
-    return `${protocol}//${hostname}:5000`;
-  }
-
-  return "http://127.0.0.1:5000";
-}
-
-const API_BASE_URL = getApiBaseUrl();
-
 function Field({
   label,
   name,
@@ -94,10 +75,7 @@ export default function App() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -112,15 +90,11 @@ export default function App() {
     try {
       setLoading(true);
 
-      const { data } = await axios.post(
-        `${API_BASE_URL}/api/send-card-request`,
-        form,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const { data } = await axios.post("/api/send-card-request", form, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       setMessage(data.message || "Email sent successfully.");
       setForm({
@@ -136,9 +110,7 @@ export default function App() {
             `Request failed with status ${error.response.status}.`
         );
       } else if (error.request) {
-        setMessage(
-          `Backend not reachable. Tried: ${API_BASE_URL}/api/send-card-request`
-        );
+        setMessage("Backend not reachable. Make sure npm run server is running.");
       } else {
         setMessage(error.message || "Failed to send email.");
       }
