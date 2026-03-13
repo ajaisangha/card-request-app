@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Voila Card Request Form</title>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <style>
     :root{
       --brand:#FF6543;
@@ -189,7 +190,7 @@
   <div class="wrap">
     <div class="hero">
       <h1>Voila Card Request Form</h1>
-      <p>Fill the form and send the completed request as an attached HTML file by email.</p>
+      <p>Fill the form and send the completed request as an Excel (.xlsx) attachment by email.</p>
     </div>
 
     <form id="cardRequestForm">
@@ -299,12 +300,12 @@
 
       <div class="section">
         <div class="actions">
-          <button type="submit" id="submitBtn">Send Email With Attachment</button>
+          <button type="submit" id="submitBtn">Send Email With Excel Attachment</button>
           <button type="reset" class="secondary">Clear Form</button>
           <div id="status" class="status"></div>
         </div>
         <div class="hint">
-          This sends the form data as an attached HTML file, not as the email body.
+          This sends the form data as an attached Excel (.xlsx) file.
         </div>
       </div>
     </form>
@@ -324,16 +325,7 @@
     const submitBtn = document.getElementById("submitBtn");
     const statusEl = document.getElementById("status");
 
-    function escapeHtml(value) {
-      return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    function formatDate(dateValue) {
+    function formatDateForExcel(dateValue) {
       if (!dateValue) return "";
       const d = new Date(dateValue + "T00:00:00");
       return d.toLocaleDateString("en-CA", {
@@ -343,113 +335,46 @@
       });
     }
 
-    function blobToDataURL(blob) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
+    function createExcelFromForm(data) {
+      const wb = XLSX.utils.book_new();
 
-    function buildAttachmentHtml(data) {
-      return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Voila Card Request</title>
-  <style>
-    body{
-      font-family: Arial, Helvetica, sans-serif;
-      color:#222;
-      margin:24px;
-      line-height:1.45;
-    }
-    .header{
-      background:#FF6543;
-      color:#fff;
-      padding:16px 18px;
-      border-radius:12px;
-      margin-bottom:20px;
-    }
-    .section{
-      border:1px solid #e5e7eb;
-      border-radius:12px;
-      padding:16px;
-      margin-bottom:16px;
-    }
-    .section h2{
-      margin:0 0 12px;
-      color:#e45736;
-      font-size:18px;
-    }
-    table{
-      width:100%;
-      border-collapse:collapse;
-    }
-    td{
-      padding:10px 8px;
-      border-bottom:1px solid #eee;
-      vertical-align:top;
-    }
-    td.label{
-      width:34%;
-      font-weight:700;
-      color:#444;
-      background:#fafafa;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1 style="margin:0;">Voila Card Request</h1>
-    <p style="margin:8px 0 0;">Generated from web form submission</p>
-  </div>
+      const worksheetData = [
+        ["Voila Card Request Form"],
+        [],
+        ["Location Group"],
+        ["Location", data.location],
+        [],
+        ["Under Authorization"],
+        ["First Name", data.authFirstName],
+        ["Last Name", data.authLastName],
+        ["Date", formatDateForExcel(data.authDate)],
+        ["Title", data.authTitle],
+        [],
+        ["Type of Card"],
+        ["Type of Card Requested", data.cardType],
+        [],
+        ["Requesting User Group"],
+        ["Requesting User Group", data.requestingUserGroup],
+        [],
+        ["Card Being Issued To"],
+        ["EMPLOYEE NUMBER", data.employeeNumber],
+        ["FIRST NAME", data.issuedFirstName],
+        ["LAST NAME", data.issuedLastName],
+        ["HANDHELD SIGN ON NAME", data.handheldSignOnName],
+        ["ADD / REMOVE", data.addRemove]
+      ];
 
-  <div class="section">
-    <h2>Location Group</h2>
-    <table>
-      <tr><td class="label">Location</td><td>${escapeHtml(data.location)}</td></tr>
-    </table>
-  </div>
+      const ws = XLSX.utils.aoa_to_sheet(worksheetData);
 
-  <div class="section">
-    <h2>Under Authorization</h2>
-    <table>
-      <tr><td class="label">First Name</td><td>${escapeHtml(data.authFirstName)}</td></tr>
-      <tr><td class="label">Last Name</td><td>${escapeHtml(data.authLastName)}</td></tr>
-      <tr><td class="label">Date</td><td>${escapeHtml(formatDate(data.authDate))}</td></tr>
-      <tr><td class="label">Title</td><td>${escapeHtml(data.authTitle)}</td></tr>
-    </table>
-  </div>
+      ws['!cols'] = [
+        { wch: 30 },
+        { wch: 40 }
+      ];
 
-  <div class="section">
-    <h2>Type of Card</h2>
-    <table>
-      <tr><td class="label">Type of Card Requested</td><td>${escapeHtml(data.cardType)}</td></tr>
-    </table>
-  </div>
+      XLSX.utils.book_append_sheet(wb, ws, "Card Request");
 
-  <div class="section">
-    <h2>Requesting User Group</h2>
-    <table>
-      <tr><td class="label">Requesting User Group</td><td>${escapeHtml(data.requestingUserGroup)}</td></tr>
-    </table>
-  </div>
-
-  <div class="section">
-    <h2>Card Being Issued To</h2>
-    <table>
-      <tr><td class="label">EMPLOYEE NUMBER</td><td>${escapeHtml(data.employeeNumber)}</td></tr>
-      <tr><td class="label">FIRST NAME</td><td>${escapeHtml(data.issuedFirstName)}</td></tr>
-      <tr><td class="label">LAST NAME</td><td>${escapeHtml(data.issuedLastName)}</td></tr>
-      <tr><td class="label">HANDHELD SIGN ON NAME</td><td>${escapeHtml(data.handheldSignOnName)}</td></tr>
-      <tr><td class="label">ADD / REMOVE</td><td>${escapeHtml(data.addRemove)}</td></tr>
-    </table>
-  </div>
-</body>
-</html>`;
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+      return `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${wbout}`;
     }
 
     form.addEventListener("submit", async function (e) {
@@ -458,27 +383,27 @@
       statusEl.textContent = "";
       statusEl.className = "status";
       submitBtn.disabled = true;
-      submitBtn.textContent = "Sending...";
+      submitBtn.textContent = "Generating Excel...";
 
       try {
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
 
-        const attachmentHtml = buildAttachmentHtml(data);
-        const blob = new Blob([attachmentHtml], { type: "text/html" });
-        const dataUrl = await blobToDataURL(blob);
+        const excelDataUrl = createExcelFromForm(data);
 
-        const fileName = `voila-card-request-${data.employeeNumber || "employee"}.html`;
+        submitBtn.textContent = "Sending...";
+
+        const fileName = `voila-card-request-${data.employeeNumber || "employee"}.xlsx`;
         const subject = `Voila Card Request - ${data.issuedFirstName} ${data.issuedLastName}`;
 
         await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
           subject: subject,
-          message: "A new Voila card request form is attached.",
+          message: "A new Voila card request form is attached as an Excel file.",
           attachment_name: fileName,
-          content: dataUrl
+          content: excelDataUrl
         });
 
-        statusEl.textContent = "Email sent successfully.";
+        statusEl.textContent = "Email sent successfully with Excel attachment";
         statusEl.classList.add("success");
         form.reset();
         document.getElementById("location").value = "Vaughn CFC";
@@ -488,7 +413,7 @@
         statusEl.classList.add("error");
       } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = "Send Email With Attachment";
+        submitBtn.textContent = "Send Email With Excel Attachment";
       }
     });
   </script>
