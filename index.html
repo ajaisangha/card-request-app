@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voila Card Request Form</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    :root{
+      --brand:#FF6543;
+      --brand-dark:#e45736;
+      --brand-soft:#fff4ef;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --border:#e5e7eb;
+      --card:#ffffff;
+      --bg:#fffaf7;
+      --success:#0f9d58;
+      --danger:#c62828;
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+      --radius:16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body{
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      color:var(--text);
+      background:
+        linear-gradient(180deg, var(--brand-soft) 0%, #fff 180px),
+        var(--bg);
+    }
+
+    .wrap{
+      max-width: 920px;
+      margin: 40px auto;
+      padding: 0 18px 40px;
+    }
+
+    .hero{
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      color:#fff;
+      border-radius: 20px;
+      padding: 26px 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+    }
+
+    .hero h1{
+      margin:0 0 8px;
+      font-size: 30px;
+      line-height:1.1;
+    }
+
+    .hero p{
+      margin:0;
+      opacity:.95;
+    }
+
+    form{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .section{
+      padding:22px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .section:last-child{
+      border-bottom:none;
+    }
+
+    .section-title{
+      margin:0 0 16px;
+      font-size:18px;
+      color:var(--brand-dark);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:16px;
+    }
+
+    .grid-1{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:16px;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    label{
+      font-weight:700;
+      font-size:14px;
+    }
+
+    input, select{
+      width:100%;
+      padding:13px 14px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      outline:none;
+      font-size:15px;
+      transition:.2s ease;
+      background:#fff;
+    }
+
+    input:focus, select:focus{
+      border-color:var(--brand);
+      box-shadow:0 0 0 4px rgba(255,101,67,.15);
+    }
+
+    .actions{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      border:none;
+      background:var(--brand);
+      color:#fff;
+      padding:14px 18px;
+      border-radius:12px;
+      font-size:15px;
+      font-weight:700;
+      cursor:pointer;
+      transition:.2s ease;
+    }
+
+    button:hover{
+      background:var(--brand-dark);
+      transform:translateY(-1px);
+    }
+
+    button:disabled{
+      opacity:.7;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    .secondary{
+      background:#fff;
+      color:var(--brand-dark);
+      border:1px solid var(--brand);
+    }
+
+    .secondary:hover{
+      background:var(--brand-soft);
+    }
+
+    .status{
+      min-height:24px;
+      font-size:14px;
+      font-weight:700;
+    }
+
+    .status.success{ color:var(--success); }
+    .status.error{ color:var(--danger); }
+
+    .hint{
+      color:var(--muted);
+      font-size:13px;
+      margin-top:6px;
+    }
+
+    @media (max-width: 720px){
+      .grid{
+        grid-template-columns:1fr;
+      }
+      .hero h1{
+        font-size:24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>Voila Card Request Form</h1>
+      <p>Fill the form and send the completed request as an attached HTML file by email.</p>
+    </div>
+
+    <form id="cardRequestForm">
+      <div class="section">
+        <h2 class="section-title">Location Group</h2>
+        <div class="grid-1">
+          <div class="field">
+            <label for="location">Location</label>
+            <select id="location" name="location" required>
+              <option value="Vaughn CFC" selected>Vaughn CFC</option>
+              <option value="Etobicoke spoke">Etobicoke spoke</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Under Authorization</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="authFirstName">First Name</label>
+            <input type="text" id="authFirstName" name="authFirstName" required />
+          </div>
+
+          <div class="field">
+            <label for="authLastName">Last Name</label>
+            <input type="text" id="authLastName" name="authLastName" required />
+          </div>
+
+          <div class="field">
+            <label for="authDate">Date</label>
+            <input type="date" id="authDate" name="authDate" required />
+          </div>
+
+          <div class="field">
+            <label for="authTitle">Title</label>
+            <input type="text" id="authTitle" name="authTitle" required />
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Type of Card</h2>
+        <div class="grid-1">
+          <div class="field">
+            <label for="cardType">Type of Card Requested</label>
+            <select id="cardType" name="cardType" required>
+              <option value="" selected disabled>Select card type</option>
+              <option value="Permanent">Permanent</option>
+              <option value="Replacement">Replacement</option>
+              <option value="Temporary">Temporary</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Requesting User Group</h2>
+        <div class="grid-1">
+          <div class="field">
+            <label for="requestingUserGroup">Requesting User Group</label>
+            <select id="requestingUserGroup" name="requestingUserGroup" required>
+              <option value="" selected disabled>Select user group</option>
+              <option value="Operations">Operations</option>
+              <option value="Delivery">Delivery</option>
+              <option value="Ocado">Ocado</option>
+              <option value="Driver">Driver</option>
+              <option value="3rd Party">3rd Party</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Card Being Issued To</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="employeeNumber">EMPLOYEE NUMBER</label>
+            <input type="text" id="employeeNumber" name="employeeNumber" required />
+          </div>
+
+          <div class="field">
+            <label for="issuedFirstName">FIRST NAME</label>
+            <input type="text" id="issuedFirstName" name="issuedFirstName" required />
+          </div>
+
+          <div class="field">
+            <label for="issuedLastName">LAST NAME</label>
+            <input type="text" id="issuedLastName" name="issuedLastName" required />
+          </div>
+
+          <div class="field">
+            <label for="handheldSignOnName">HANDHELD SIGN ON NAME</label>
+            <input type="text" id="handheldSignOnName" name="handheldSignOnName" required />
+          </div>
+
+          <div class="field">
+            <label for="addRemove">ADD / REMOVE</label>
+            <select id="addRemove" name="addRemove" required>
+              <option value="" selected disabled>Select option</option>
+              <option value="ADD">ADD</option>
+              <option value="REMOVE">REMOVE</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="actions">
+          <button type="submit" id="submitBtn">Send Email With Attachment</button>
+          <button type="reset" class="secondary">Clear Form</button>
+          <div id="status" class="status"></div>
+        </div>
+        <div class="hint">
+          This sends the form data as an attached HTML file, not as the email body.
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    (function () {
+      emailjs.init({
+        publicKey: "YOUR_PUBLIC_KEY"
+      });
+    })();
+
+    const SERVICE_ID = "YOUR_SERVICE_ID";
+    const TEMPLATE_ID = "YOUR_TEMPLATE_ID";
+
+    const form = document.getElementById("cardRequestForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const statusEl = document.getElementById("status");
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatDate(dateValue) {
+      if (!dateValue) return "";
+      const d = new Date(dateValue + "T00:00:00");
+      return d.toLocaleDateString("en-CA", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+    }
+
+    function blobToDataURL(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    function buildAttachmentHtml(data) {
+      return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Voila Card Request</title>
+  <style>
+    body{
+      font-family: Arial, Helvetica, sans-serif;
+      color:#222;
+      margin:24px;
+      line-height:1.45;
+    }
+    .header{
+      background:#FF6543;
+      color:#fff;
+      padding:16px 18px;
+      border-radius:12px;
+      margin-bottom:20px;
+    }
+    .section{
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      padding:16px;
+      margin-bottom:16px;
+    }
+    .section h2{
+      margin:0 0 12px;
+      color:#e45736;
+      font-size:18px;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+    td{
+      padding:10px 8px;
+      border-bottom:1px solid #eee;
+      vertical-align:top;
+    }
+    td.label{
+      width:34%;
+      font-weight:700;
+      color:#444;
+      background:#fafafa;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 style="margin:0;">Voila Card Request</h1>
+    <p style="margin:8px 0 0;">Generated from web form submission</p>
+  </div>
+
+  <div class="section">
+    <h2>Location Group</h2>
+    <table>
+      <tr><td class="label">Location</td><td>${escapeHtml(data.location)}</td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Under Authorization</h2>
+    <table>
+      <tr><td class="label">First Name</td><td>${escapeHtml(data.authFirstName)}</td></tr>
+      <tr><td class="label">Last Name</td><td>${escapeHtml(data.authLastName)}</td></tr>
+      <tr><td class="label">Date</td><td>${escapeHtml(formatDate(data.authDate))}</td></tr>
+      <tr><td class="label">Title</td><td>${escapeHtml(data.authTitle)}</td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Type of Card</h2>
+    <table>
+      <tr><td class="label">Type of Card Requested</td><td>${escapeHtml(data.cardType)}</td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Requesting User Group</h2>
+    <table>
+      <tr><td class="label">Requesting User Group</td><td>${escapeHtml(data.requestingUserGroup)}</td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Card Being Issued To</h2>
+    <table>
+      <tr><td class="label">EMPLOYEE NUMBER</td><td>${escapeHtml(data.employeeNumber)}</td></tr>
+      <tr><td class="label">FIRST NAME</td><td>${escapeHtml(data.issuedFirstName)}</td></tr>
+      <tr><td class="label">LAST NAME</td><td>${escapeHtml(data.issuedLastName)}</td></tr>
+      <tr><td class="label">HANDHELD SIGN ON NAME</td><td>${escapeHtml(data.handheldSignOnName)}</td></tr>
+      <tr><td class="label">ADD / REMOVE</td><td>${escapeHtml(data.addRemove)}</td></tr>
+    </table>
+  </div>
+</body>
+</html>`;
+    }
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      statusEl.textContent = "";
+      statusEl.className = "status";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Sending...";
+
+      try {
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        const attachmentHtml = buildAttachmentHtml(data);
+        const blob = new Blob([attachmentHtml], { type: "text/html" });
+        const dataUrl = await blobToDataURL(blob);
+
+        const fileName = `voila-card-request-${data.employeeNumber || "employee"}.html`;
+        const subject = `Voila Card Request - ${data.issuedFirstName} ${data.issuedLastName}`;
+
+        await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+          subject: subject,
+          message: "A new Voila card request form is attached.",
+          attachment_name: fileName,
+          content: dataUrl
+        });
+
+        statusEl.textContent = "Email sent successfully.";
+        statusEl.classList.add("success");
+        form.reset();
+        document.getElementById("location").value = "Vaughn CFC";
+      } catch (error) {
+        console.error(error);
+        statusEl.textContent = "Failed to send email. Check your EmailJS keys/template.";
+        statusEl.classList.add("error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Send Email With Attachment";
+      }
+    });
+  </script>
+</body>
+</html>
