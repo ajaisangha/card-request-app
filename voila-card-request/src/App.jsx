@@ -12,9 +12,8 @@ const initialState = {
   employeeNumber: "",
   firstName: "",
   lastName: "",
-  handheldSignOnName: "",
   addRemove: "ADD",
-  recipientEmail: "",
+  recipientEmails: "",
 };
 
 function Field({
@@ -25,6 +24,7 @@ function Field({
   type = "text",
   required = false,
   options,
+  textarea = false,
 }) {
   return (
     <div className="field">
@@ -32,7 +32,17 @@ function Field({
         {label} {required ? <span className="req">*</span> : null}
       </label>
 
-      {options ? (
+      {textarea ? (
+        <textarea
+          id={name}
+          name={name}
+          value={value}
+          onChange={onChange}
+          required={required}
+          rows="3"
+          placeholder="Multiple emails separated by commas or new lines&#10;e.g. user1@example.com, user2@example.com"
+        />
+      ) : options ? (
         <select id={name} name={name} value={value} onChange={onChange}>
           {options.map((opt) => (
             <option key={opt} value={opt}>
@@ -48,6 +58,8 @@ function Field({
           value={value}
           onChange={onChange}
           required={required}
+          pattern={name === "employeeNumber" ? "\\d+" : undefined}
+          inputMode={name === "employeeNumber" ? "numeric" : undefined}
         />
       )}
     </div>
@@ -59,6 +71,16 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  const handheldSignOnName = useMemo(
+    () =>
+      form.firstName.trim() && form.lastName.trim()
+        ? `${form.firstName.trim().toLowerCase()}.${form.lastName
+            .trim()
+            .toLowerCase()}`
+        : "",
+    [form.firstName, form.lastName]
+  );
+
   const canSubmit = useMemo(() => {
     return (
       form.authFirstName.trim() &&
@@ -66,12 +88,13 @@ export default function App() {
       form.authDate &&
       form.authTitle.trim() &&
       form.employeeNumber.trim() &&
+      /^\d+$/.test(form.employeeNumber) &&
       form.firstName.trim() &&
       form.lastName.trim() &&
-      form.handheldSignOnName.trim() &&
-      form.recipientEmail.trim()
+      handheldSignOnName &&
+      form.recipientEmails.trim()
     );
-  }, [form]);
+  }, [form, handheldSignOnName]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -83,17 +106,23 @@ export default function App() {
     setMessage("");
 
     if (!canSubmit) {
-      setMessage("Please fill all required fields.");
+      setMessage("Please fill all required fields correctly.");
       return;
     }
 
     try {
       setLoading(true);
 
-      const { data } = await axios.post("/api/send-card-request", form, {
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const emailList = form.recipientEmails
+        .split(/[\n,]+/)
+        .map((email) => email.trim())
+        .filter(Boolean)
+        .join(",");
+
+      const { data } = await axios.post("/api/send-card-request", {
+        ...form,
+        handheldSignOnName,
+        recipientEmails: emailList,
       });
 
       setMessage(data.message || "Email sent successfully.");
@@ -213,6 +242,7 @@ export default function App() {
               <Field
                 label="Employee Number"
                 name="employeeNumber"
+                type="text"
                 value={form.employeeNumber}
                 onChange={handleChange}
                 required
@@ -231,13 +261,13 @@ export default function App() {
                 onChange={handleChange}
                 required
               />
-              <Field
-                label="Handheld Sign On Name"
-                name="handheldSignOnName"
-                value={form.handheldSignOnName}
-                onChange={handleChange}
-                required
-              />
+              <div className="field">
+                <label>Handheld Sign On Name</label>
+                <div className="preview-field">
+                  {handheldSignOnName || "firstname.lastname"}
+                </div>
+                <small>Auto-generated from First Name + Last Name</small>
+              </div>
               <Field
                 label="Add / Remove"
                 name="addRemove"
@@ -246,18 +276,18 @@ export default function App() {
                 options={["ADD", "REMOVE"]}
               />
               <Field
-                label="Send To Email"
-                name="recipientEmail"
-                type="email"
-                value={form.recipientEmail}
+                label="Send To Emails"
+                name="recipientEmails"
+                value={form.recipientEmails}
                 onChange={handleChange}
+                textarea
                 required
               />
             </div>
           </section>
 
           <div className="actions">
-            <button type="submit" disabled={loading}>
+            <button type="submit" disabled={loading || !canSubmit}>
               {loading ? "Sending..." : "Send Excel Attachment"}
             </button>
           </div>

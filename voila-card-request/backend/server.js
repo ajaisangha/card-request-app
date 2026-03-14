@@ -9,7 +9,19 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.join(__dirname, ".env") });
+// Load Codespaces secrets first (secure)
+const codespaceSecrets = {
+  SMTP_HOST: process.env.SMTP_HOST,
+  SMTP_PORT: process.env.SMTP_PORT,
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASS: process.env.SMTP_PASS,
+  FROM_EMAIL: process.env.FROM_EMAIL,
+};
+
+// Fallback to local .env only if Codespaces secrets not found
+if (!codespaceSecrets.SMTP_HOST) {
+  dotenv.config({ path: path.join(__dirname, ".env") });
+}
 
 const app = express();
 
@@ -27,6 +39,7 @@ app.get("/api/health", (req, res) => {
     smtpHost: !!process.env.SMTP_HOST,
     smtpUser: !!process.env.SMTP_USER,
     fromEmail: !!process.env.FROM_EMAIL,
+    smtpPort: process.env.SMTP_PORT || null,
   });
 });
 
@@ -45,7 +58,7 @@ app.post("/api/send-card-request", async (req, res) => {
       lastName,
       handheldSignOnName,
       addRemove,
-      recipientEmail,
+      recipientEmails,
     } = req.body;
 
     if (
@@ -57,21 +70,9 @@ app.post("/api/send-card-request", async (req, res) => {
       !firstName ||
       !lastName ||
       !handheldSignOnName ||
-      !recipientEmail
+      !recipientEmails
     ) {
       return res.status(400).json({ message: "Missing required fields." });
-    }
-
-    if (
-      !process.env.SMTP_HOST ||
-      !process.env.SMTP_PORT ||
-      !process.env.SMTP_USER ||
-      !process.env.SMTP_PASS ||
-      !process.env.FROM_EMAIL
-    ) {
-      return res.status(500).json({
-        message: "SMTP configuration missing in backend/.env",
-      });
     }
 
     const rows = [
@@ -110,6 +111,7 @@ app.post("/api/send-card-request", async (req, res) => {
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT),
       secure: false,
+      family: 'IPv4',  // ← Force IPv4 (fixes ::1 ECONNREFUSED)
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -118,18 +120,16 @@ app.post("/api/send-card-request", async (req, res) => {
 
     await transporter.verify();
 
-    const filename = `voila-card-request-${new Date()
-      .toISOString()
-      .slice(0, 10)}.xlsx`;
-
     const info = await transporter.sendMail({
       from: process.env.FROM_EMAIL,
-      to: recipientEmail,
+      to: recipientEmails,
       subject: "Voila Card Request Form",
-      text: "Attached is the Excel file for the Voila card request form.",
+      text: `Hi Security team,
+
+Can you please take picture and issue an id to the teammates in attached file.`,
       attachments: [
         {
-          filename,
+          filename: `voila-card-request-${new Date().toISOString().slice(0, 10)}.xlsx`,
           content: excelBuffer,
           contentType:
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -137,25 +137,20 @@ app.post("/api/send-card-request", async (req, res) => {
       ],
     });
 
-    console.log("Email sent:", info.messageId);
-
-    res.json({ message: "Email sent with Excel attachment." });
+    res.json({
+      message: "Email sent with Excel attachment.",
+      messageId: info.messageId,
+      recipients: recipientEmails,
+    });
   } catch (error) {
-    console.error("Send error:", error);
+    console.error("SMTP error:", error);
     res.status(500).json({
-      message: error?.message || "Failed to send email.",
+      message: error?.response || error?.message || "SMTP send failed.",
     });
   }
 });
 
-app.use((req, res) => {
-  res.status(404).json({
-    message: `Route not found: ${req.method} ${req.originalUrl}`,
-  });
-});
-
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on http://127.0.0.1:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

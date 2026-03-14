@@ -166,3 +166,30 @@ button:disabled {
     padding: 18px;
   }
 }
+
+.preview-field {
+  background: white;
+  border: 1px solid #ffd0c5;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 15px;
+  font-family: monospace;
+  color: var(--brand-dark);
+  font-weight: 600;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.preview-field:empty::before {
+  content: "firstname.lastname";
+  color: var(--muted);
+  font-weight: normal;
+}
+
+.field small {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 4px;
+  display: block;
+}
